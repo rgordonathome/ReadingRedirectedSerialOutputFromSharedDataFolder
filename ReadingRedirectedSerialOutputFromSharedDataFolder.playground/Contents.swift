@@ -9,8 +9,18 @@ import Cocoa
 // Default is 15 seconds.
 // In other words, program will always run for 15 seconds by default.
 //
+var currentValue : Int = 0
+
+// Begin reading the file with serial output in shared folder
 if let aStreamReader = StreamReader(file: "serial-output.txt", maxSleepInSeconds: 30) {
+    
+    // Read data from the file
     for line in aStreamReader {
+        
+        // Print line of data received from file
         print(line, terminator : "" )
+        
+        // Convert received value to integer
+        currentValue = NSString(string: line).integerValue
     }
 }
