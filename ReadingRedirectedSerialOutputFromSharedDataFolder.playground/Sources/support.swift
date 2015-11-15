@@ -14,12 +14,32 @@ public class StreamReader {
     let buffer : NSMutableData!
     let delimData : NSData!
     var atEof : Bool = false
+    var sleepMax : Int
+    var sleepCount = 0
     
-    public init?(path: String, delimiter: String = "\n", encoding : UInt = NSUTF8StringEncoding, chunkSize : Int = 4096) {
+    public init?(file: String, maxSleepInSeconds : Int = 15, delimiter: String = "\n", encoding : UInt = NSUTF8StringEncoding, chunkSize : Int = 4096) {
+        
+        // initialize variables
+        self.sleepMax = maxSleepInSeconds
         self.chunkSize = chunkSize
         self.encoding = encoding
         
-        if let fileHandle = NSFileHandle(forReadingAtPath: path),
+        // Get path to the Documents folder
+        let documentPath = NSSearchPathForDirectoriesInDomains(.DocumentDirectory, .UserDomainMask, true)[0] as NSString
+        
+        // Append folder name of Shared Playground Data folder
+        let sharedDataPath = documentPath.stringByAppendingPathComponent("Shared Playground Data")
+        
+        // Append file name to folder path string
+        let filePath = sharedDataPath + "/" + file
+        print(filePath)
+        
+        // clear the console area
+//        for _ in 1...30 {
+//            print("")
+//        }
+        
+        if let fileHandle = NSFileHandle(forReadingAtPath: filePath),
             delimData = delimiter.dataUsingEncoding(encoding),
             buffer = NSMutableData(capacity: chunkSize)
         {
@@ -27,6 +47,7 @@ public class StreamReader {
             self.delimData = delimData
             self.buffer = buffer
         } else {
+            print("in nil")
             self.fileHandle = nil
             self.delimData = nil
             self.buffer = nil
@@ -43,7 +64,14 @@ public class StreamReader {
         precondition(fileHandle != nil, "Attempt to read from closed file")
         
         if atEof {
-            return nil
+            if sleepCount < sleepMax {
+                sleepCount++
+                sleep(1)
+                atEof = false
+//                return "sleeping"
+            } else {
+                return nil
+            }
         }
         
         // Read data chunks from file until a line delimiter is found:
@@ -58,22 +86,28 @@ public class StreamReader {
                     let line = NSString(data: buffer, encoding: encoding)
                     
                     buffer.length = 0
-                    return line as String?
+                    let outputLine = (line as String?)! + "\n"
+                    return outputLine
                 }
                 // No more lines.
-                return nil
+//                return nil
             }
             buffer.appendData(tmpData)
             range = buffer.rangeOfData(delimData, options: [], range: NSMakeRange(0, buffer.length))
         }
         
         // Convert complete line (excluding the delimiter) to a string:
-        let line = NSString(data: buffer.subdataWithRange(NSMakeRange(0, range.location)),
-            encoding: encoding)
+        let line = NSString(data: buffer.subdataWithRange(NSMakeRange(0, range.location)), encoding: encoding)
         // Remove line (and the delimiter) from the buffer:
         buffer.replaceBytesInRange(NSMakeRange(0, range.location + range.length), withBytes: nil, length: 0)
         
-        return line as String?
+        //print("range location \(range.location)")
+        if (range.location != 0 && range.location != 1) {
+            let outputLine = (line as String?)! + "\n"
+            return outputLine
+        } else {
+            return ""
+        }
     }
     
     /// Start reading from the beginning of file.
