@@ -81,8 +81,10 @@ public class StreamReader {
             if tmpData.length == 0 {
                 // EOF or read error.
                 atEof = true
+                // Buffer contains last line in file (not terminated by delimiter).
+                // (Commented out because we don't want to return the last line, we skip it because file still being written to)
 //                if buffer.length > 0 {
-//                    // Buffer contains last line in file (not terminated by delimiter).
+//
 //                    let line = NSString(data: buffer, encoding: encoding)
 //                    
 //                    buffer.length = 0
